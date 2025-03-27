@@ -3,13 +3,25 @@ import * as THREE from 'three';
 import * as DATA from '../../data.js';
 
 export const playerVelocity = new THREE.Vector3();
-export let onGround = false;
+export let onGround = false; // This will be updated by setOnGround
 export const playerDirection = new THREE.Vector3(); // For storing look direction
 
-// Needs delta, camera, controls, keys
-export function handlePlayerMovement(delta, camera, controls, keys) {
-    if (!controls.isLocked) return; // Only move when locked
+/**
+ * Calculates player's desired velocity based on input and gravity.
+ * Does NOT move the camera directly.
+ * @param {number} delta - Time delta.
+ * @param {THREE.Camera} camera - Used for direction calculation.
+ * @param {THREE.PointerLockControls} controls - Used to get direction.
+ * @param {object} keys - Current keyboard state.
+ */
+export function calculatePlayerVelocity(delta, camera, controls, keys) {
+    if (!controls.isLocked) {
+        // Optionally decay velocity when not locked?
+        // playerVelocity.multiplyScalar(1 - 0.1 * delta * 10); // Example decay
+        return;
+    }
 
+    // --- Horizontal Velocity ---
     controls.getDirection(playerDirection);
     const forward = new THREE.Vector3(playerDirection.x, 0, playerDirection.z).normalize();
     const right = new THREE.Vector3().crossVectors(camera.up, forward).normalize();
@@ -20,29 +32,34 @@ export function handlePlayerMovement(delta, camera, controls, keys) {
     const moveDirection = new THREE.Vector3(moveX, 0, moveZ);
     if (moveDirection.length() > 0) moveDirection.normalize();
 
-    playerVelocity.x = (forward.x * moveDirection.z + right.x * moveDirection.x) * DATA.PLAYER.SPEED;
-    playerVelocity.z = (forward.z * moveDirection.z + right.z * moveDirection.x) * DATA.PLAYER.SPEED;
+    // Target horizontal velocity (Instant acceleration/deceleration for now)
+    const targetVelocityX = (forward.x * moveDirection.z + right.x * moveDirection.x) * DATA.PLAYER.SPEED;
+    const targetVelocityZ = (forward.z * moveDirection.z + right.z * moveDirection.x) * DATA.PLAYER.SPEED;
 
+    // Apply some damping/acceleration (optional, smoother feel)
+    const accel = 20.0; // Adjust as needed
+    playerVelocity.x += (targetVelocityX - playerVelocity.x) * accel * delta;
+    playerVelocity.z += (targetVelocityZ - playerVelocity.z) * accel * delta;
+
+    // --- Vertical Velocity ---
     // Apply Gravity
     playerVelocity.y -= DATA.WORLD.GRAVITY * delta;
 
-    // Jumping (onGround state updated externally after collision)
+    // Apply Jumping (only if onGround flag is true)
     if (keys['Space'] && onGround) {
         playerVelocity.y = DATA.PLAYER.JUMP_FORCE;
-        // onGround = false; // Set externally by physics/collision result
+        // onGround state is handled externally by setOnGround
+        // Play jump sound here?
     }
 
-    // Apply movement step by step, checking collision between steps
-    camera.position.x += playerVelocity.x * delta;
-    // checkCollision() called externally
-    camera.position.z += playerVelocity.z * delta;
-    // checkCollision() called externally
-    camera.position.y += playerVelocity.y * delta;
-    // checkCollision() called externally
-
+     // Clamp max falling speed (optional)
+     const MAX_FALL_SPEED = 50.0;
+     if (playerVelocity.y < -MAX_FALL_SPEED) {
+         playerVelocity.y = -MAX_FALL_SPEED;
+     }
 }
 
-// Function to update onGround state, called from main loop after collision check
- export function setOnGround(isOnGround) {
+// Function to update the internal onGround state, called from main loop
+export function setOnGround(isOnGround) {
     onGround = isOnGround;
 }
