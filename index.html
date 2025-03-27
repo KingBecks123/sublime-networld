@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>HTMLCraft Refactored</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- Crosshair -->
+    <div id="crosshair">+</div>
+
+    <!-- Hotbar (Ensure 9 slots to match data.js) -->
+    <div id="hotbar">
+        <div class="slot"></div> <div class="slot"></div> <div class="slot"></div>
+        <div class="slot"></div> <div class="slot"></div> <div class="slot"></div>
+        <div class="slot"></div> <div class="slot"></div> <div class="slot"></div> <!-- 9 slots total -->
+    </div>
+
+    <!-- Texture Toggle Button -->
+    <button id="texture-toggle">Textures: Generated</button>
+
+    <!-- Blocker -->
+    <div id="blocker">
+        <div id="instructions">
+            Click to play<br>
+            WASD: Move | SPACE: Jump | Mouse: Look<br>
+            Left Click: Break | Right Click: Place<br>
+            1-9: Select Block
+        </div>
+    </div>
+
+    <!-- Three.js Import -->
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://unpkg.com/three@0.161.0/build/three.module.js",
+                "three/addons/": "https://unpkg.com/three@0.161.0/examples/jsm/"
+            }
+        }
+    </script>
+
+    <!-- Main Game Logic -->
+    <script type="module" src="src/main.js"></script>
+</body>
+</html>

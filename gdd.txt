@@ -1,0 +1,296 @@
+Game Design Document: HTMLCraft (v2.0 - Atlas Edition)
+
+Version: 2.0
+Date: 2024-03-15
+
+1. Overview
+
+Title: HTMLCraft
+
+Concept: A performant, first-person, voxel-based sandbox game running in a web browser using Three.js. Players explore a procedurally generated blocky world featuring optimized rendering via chunk mesh merging and texturing via a texture atlas. Core mechanics include breaking/placing blocks and experiencing a dynamic day/night cycle within a modular code structure.
+
+Genre: Sandbox, Building, Voxel
+
+Platform: Web Browser (supporting modern JavaScript Modules / WebGL)
+
+Technology: Three.js, JavaScript Modules, HTML5, CSS3
+
+2. Target Audience
+
+Casual gamers interested in performant browser-based sandbox/building experiences.
+
+Fans of voxel-based games like Minecraft.
+
+Web developers and students interested in Three.js, game performance optimization (mesh merging, atlases), and modular JavaScript development.
+
+3. Gameplay Mechanics
+
+Core Loop:
+
+Explore: Move through the procedurally generated world, rendered using merged chunk meshes.
+
+Interact: Target blocks using raycasting against chunk meshes, break existing block data, triggering chunk re-meshing.
+
+Build: Select blocks from the hotbar, place block data, triggering chunk re-meshing.
+
+(Implicit Survival): Experience the changing environment due to the day/night cycle.
+
+Player Controls:
+
+Movement: WASD keys for horizontal movement.
+
+Jump: Spacebar.
+
+Look: Mouse movement (Pointer Lock).
+
+Break Block: Left Mouse Button (modifies world data, triggers re-mesh).
+
+Place Block: Right Mouse Button (modifies world data, triggers re-mesh).
+
+Select Hotbar Slot: 1-9 keys.
+
+Player Physics & Collision:
+
+Basic AABB collision detection against the block data model (world map), not the visual meshes.
+
+Gravity applied constantly.
+
+Jumping provides vertical velocity. onGround state determined by collision checks.
+
+Collision resolution pushes the player out of intersecting solid blocks based on the data model.
+
+Respawn mechanism if player falls below Y=-50.
+
+Interaction System:
+
+Raycasting from the camera center targets the aggregated chunk mesh geometry.
+
+Maximum interaction reach (PLAYER.REACH).
+
+Visual feedback via a highlight box positioned based on raycast intersection and block data verification.
+
+Breaking/Placing modifies the underlying world data map first.
+
+These data modifications trigger a re-generation of the visual mesh (updateChunkGeometry) for the affected chunk(s) (including neighbors if on a border).
+
+Placement checks against player collision box and existing block data.
+
+Inventory & Hotbar:
+
+A 9-slot hotbar displays available block types for placement.
+
+Slots selected via number keys or potentially clicks (implemented).
+
+Active slot visually highlighted.
+
+Inventory counts (currently infinite, stored in main.js) displayed on slots.
+
+Placing/Breaking logic updates inventory counts and triggers UI refresh (updateHotbarDisplay).
+
+4. Game World
+
+Structure: Voxel-based grid data model (world map: chunkKey -> localKey -> blockType). BLOCK.SIZE = 1.
+
+World Generation:
+
+Data Generation (generation.js): Chunk-based (CHUNK_SIZE = 16) within GENERATION_RADIUS. Procedurally populates the world data map using noise for terrain height and simple rules for block types (Grass, Dirt, Stone, Sand).
+
+Mesh Generation (meshing.js):
+
+Iterates through block data within a chunk.
+
+Performs face culling: Only generates geometry for block faces exposed to air or transparent blocks.
+
+Calculates vertex positions, normals, and Texture Atlas UV coordinates.
+
+Creates aggregated BufferGeometry for opaque and transparent faces separately per chunk.
+
+Creates THREE.Mesh objects (one opaque, one transparent per chunk) using shared materials.
+
+Block Types:
+
+Implemented Data: Grass, Dirt, Stone, Wood (Planks), Leaves, Sand, Log, Stone Brick, Glass.
+
+Visuals depend on the Texture Atlas content and ATLAS.UV_MAP configuration.
+
+Transparency handled via separate geometry/material and alpha testing/blending.
+
+Environment:
+
+Day/Night Cycle: (Logic exists, may be disabled for testing) Affects ambient/directional light.
+
+Lighting: Basic ambient and directional light.
+
+Sky: Simple solid color background (Skybox loading disabled/optional).
+
+Fog: Disabled for testing (can be re-enabled, synced with background).
+
+5. User Interface (UI) & User Experience (UX) (src/ui/ modules)
+
+HUD:
+
+Crosshair: Static '+' at screen center.
+
+Hotbar: Bottom center, shows selectable blocks, counts, active slot. Managed by hotbar.js.
+
+Menus/Overlays:
+
+Blocker Screen: Initial overlay with instructions, click-to-play/lock. Managed by ui.js.
+
+Feedback:
+
+Visual: Highlight box on targeted blocks (managed by highlight.js). Active hotbar slot.
+
+Audio: (Partially Implemented) Basic sound playback structure exists; specific sounds need implementation/assignment.
+
+6. Art Style & Visuals
+
+Overall Style: Voxel / Blocky aesthetic.
+
+Texturing: Texture Atlas System
+
+A single image file (textures/atlas.png) contains all necessary block face textures arranged in a grid.
+
+The layout and coordinates are defined in data.js (ATLAS constant, including TILE_SIZE, dimensions, and UV_MAP).
+
+UV_MAP maps block types/faces to normalized [U, V] start coordinates within the atlas.
+
+generateChunkGeometryData calculates vertex UVs based on UV_MAP and TILE_SIZE.
+
+This significantly reduces draw calls compared to individual textures.
+
+Models: Rendering uses merged chunk meshes (THREE.Mesh with THREE.BufferGeometry), not individual cubes per block. Reduces GPU overhead.
+
+Materials: Uses shared materials (opaqueChunkMaterial, transparentChunkMaterial) created in materials.js, both referencing the single atlasTexture.
+
+7. Audio / Sound Design (src/audio/ - Planned)
+
+Engine: Three.js AudioListener and Audio.
+
+Events: Structure exists for playing sounds on block break/place. Specific sound file loading and triggering tied to block types is partially implemented but needs refinement.
+
+Context: AudioContext resume handled via user interaction (click on instructions).
+
+8. Technical Implementation
+
+Engine: Three.js (r161+).
+
+Language: JavaScript (ES Modules).
+
+Renderer: WebGL via Three.js.
+
+Code Structure: Modular (src/ directory with subfolders for world, player, ui). main.js acts as orchestrator. Clearer separation of concerns (Setup, Materials, World State, Generation, Meshing, Player Logic, Physics, Input, UI).
+
+Performance:
+
+Chunk Mesh Merging: Primary optimization. Reduces potentially thousands of draw calls per frame to roughly 2 draw calls per visible chunk (1 opaque, 1 transparent). Geometry generated only for visible faces.
+
+Texture Atlas: Single texture bind per chunk mesh (opaque/transparent), further reducing state changes for the GPU.
+
+Collision: Performed against the efficient block data map, not complex mesh geometry.
+
+Cost: Re-meshing a chunk upon block modification introduces a CPU cost, potentially causing a brief stutter (mitigated by limiting updates to affected chunks).
+
+9. Necessary Assets
+
+A. Textures (textures/ folder):
+
+atlas.png (CRITICAL):
+
+The single texture atlas image containing all unique block faces (e.g., grass_top, grass_side, dirt, stone, log_top, log_side, etc.).
+
+Resolution should accommodate ATLAS.TILE_SIZE (e.g., if TILE_SIZE is 16, atlas dimensions like 64x64, 128x128, 256x128 are common).
+
+Must correspond exactly to the layout defined in data.js -> ATLAS.UV_MAP.
+
+Skybox Textures (textures/skybox/ - Optional):
+
+px.png, nx.png, py.png, ny.png, pz.png, nz.png (If skybox rendering is re-enabled).
+
+B. Audio (sounds/ folder):
+
+Format: .wav, .mp3, .ogg.
+
+Required: Sound files corresponding to block break/place events (e.g., break_stone.wav, place_stone.wav, etc.). List similar to previous GDD.
+
+C. Fonts/Icons:
+
+Currently uses default browser fonts. Optional custom fonts/icons.
+
+10. Implemented Features (Summary)
+
+Modular code structure (src/ folders).
+
+Core Three.js setup (Scene, Camera, Renderer, Basic Lighting).
+
+Pointer Lock Controls and basic UI interaction (Blocker).
+
+Procedural world data generation (terrain height, basic block types).
+
+Chunk Mesh Merging with face culling for rendering.
+
+Texture Atlas system for texturing merged meshes.
+
+Shared materials for chunk rendering.
+
+Player movement (WASD, Jump) and gravity.
+
+AABB Collision Detection (against data model).
+
+Block interaction (Break/Place via raycasting against chunk meshes, modifying data model, triggering re-mesh).
+
+Basic Hotbar UI (selection via 1-9, visual state, count display).
+
+Block highlight box system.
+
+Basic audio context handling.
+
+11. Future Scope / Potential Features
+
+Rendering/Meshing:
+
+Implement Greedy Meshing for further geometry optimization.
+
+Optimize chunk updates (e.g., only update sections, use dirty flags).
+
+Implement proper material handling for different block types within the atlas (potentially using custom shaders or multiple materials per chunk if necessary).
+
+Re-enable and potentially improve Day/Night cycle visuals (sky color, fog blending, light direction).
+
+Implement optional Skybox rendering.
+
+Add simple particle effects (block breaking).
+
+Investigate performance with shadows enabled on chunk meshes.
+
+World Generation:
+
+More varied terrain (biomes, caves, structures, different height variation).
+
+Add more block types (water with physics, ores, functional blocks like furnaces).
+
+Tree generation.
+
+Gameplay:
+
+Finite inventory system + UI screen.
+
+Crafting system.
+
+Tools (affecting breaking speed/drops).
+
+Mobs (passive/hostile).
+
+Health/Damage system.
+
+Technical:
+
+Implement world saving/loading (LocalStorage, IndexedDB).
+
+Refactor findSuitableSpawn for robustness.
+
+Improve interaction feedback (sounds, particles).
+
+Consider Web Workers for chunk generation/meshing to reduce main thread load.
+
+Explore Multiplayer capabilities (WebSocket server).

@@ -1,0 +1,128 @@
+body {
+    margin: 0;
+    overflow: hidden; /* Hide scrollbars */
+    font-family: sans-serif;
+    background-color: #87CEEB; /* Default background if canvas fails/before load */
+    color: #fff; /* Default text color */
+}
+
+canvas {
+    display: block; /* Remove potential extra space below canvas */
+}
+
+#crosshair {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: 24px;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8); /* More pronounced shadow */
+    pointer-events: none; /* Allow clicks to pass through */
+    z-index: 10;
+}
+
+#hotbar {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    background-color: rgba(0, 0, 0, 0.6); /* Slightly darker background */
+    border: 2px solid #444; /* Darker border */
+    border-radius: 4px; /* Slightly rounded corners */
+    padding: 3px;
+    z-index: 10;
+    user-select: none; /* Prevent text selection */
+}
+
+#hotbar .slot {
+    width: 54px; /* Slightly larger */
+    height: 54px;
+    border: 2px solid #555; /* Medium grey border */
+    margin: 2px;
+    display: flex;
+    flex-direction: column; /* Stack elements vertically if needed */
+    align-items: center;
+    justify-content: center;
+    font-size: 11px; /* Smaller font for labels */
+    font-weight: bold;
+    color: white;
+    background-color: rgba(100, 100, 100, 0.7);
+    cursor: pointer;
+    position: relative; /* Needed for absolute positioning of count */
+    box-sizing: border-box; /* Include border and padding in element's total width and height */
+    overflow: hidden; /* Hide anything that might overflow */
+    text-transform: uppercase;
+    text-shadow: 1px 1px 1px rgba(0,0,0,0.7);
+}
+
+#hotbar .slot.active {
+    border-color: #FFF; /* White border for active */
+    box-shadow: 0 0 8px rgba(255, 255, 100, 0.8); /* Yellow glow */
+}
+
+/* Optional: Add background images or colors for specific block types */
+/* Example:
+#hotbar .slot[data-block-type="grass"] { background-image: url('textures/grass_top.png'); background-size: cover; }
+#hotbar .slot[data-block-type="stone"] { background-color: #8d99ae; }
+*/
+
+/* Style for the count element added via JS */
+#hotbar .slot .count {
+    position: absolute;
+    bottom: 2px;
+    right: 4px;
+    font-size: 14px; /* Larger count font */
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px black; /* Stronger shadow for readability */
+    pointer-events: none; /* Prevent count from blocking clicks */
+}
+
+
+#blocker {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+    background-color: rgba(0,0,0,0.6); /* Slightly darker blocker */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 20; /* Ensure it's above other UI */
+}
+
+#instructions {
+    max-width: 600px; /* Limit width */
+    width: 80%;
+    font-size: clamp(20px, 4vw, 36px); /* Responsive font size */
+    line-height: 1.5;
+    text-align: center;
+    color: white;
+    background-color: rgba(0,0,0,0.8); /* More opaque background */
+    padding: 30px;
+    border-radius: 10px;
+    cursor: pointer;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+}
+
+/* Button Style */
+#texture-toggle {
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    padding: 8px 12px;
+    background-color: rgba(0, 0, 0, 0.6);
+    color: white;
+    border: 1px solid #555;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 14px;
+    z-index: 15; /* Above hotbar/crosshair, below blocker */
+}
+
+#texture-toggle:hover {
+    background-color: rgba(50, 50, 50, 0.7);
+}
